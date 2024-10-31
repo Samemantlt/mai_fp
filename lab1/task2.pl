@@ -1,39 +1,22 @@
-% Вариант 3
-:- consult(three).
+% Вариант 1
+:- consult(one).
 
-% Для каждого студента, найти средний балл, и сдал ли он экзамены или нет
-avg_grades(Grades, AverageGrades) :-
-    findall(X, member(grade(_, X), Grades), GradesAsNumbers),
-    sum_list(GradesAsNumbers, GradesSum),
+% Получить таблицу групп и средний балл по каждой из групп
+groups_with_avg(GroupNo, AverageGrade) :-
+    bagof(StudentName, student(GroupNo, StudentName), StudentsNames),
+    findall(Grade, (member(StudentName, StudentsNames), grade(StudentName, _, Grade)), GradesAsNumbers),
     length(GradesAsNumbers, GradesCount),
-    AverageGrades is GradesSum / GradesCount.
-
-passed_exams(Grades, PassedExams) :-
-    findall(X, (member(grade(_, X), Grades), X < 3), BadGrades),
-    length(BadGrades, BadGradesCount),
-    (BadGradesCount == 0 -> PassedExams is 1; PassedExams is 0).
-
-avg_grades_and_passed(StudentName, AverageGrades, PassedExams) :-
-    student(_, StudentName, Grades),
-    avg_grades(Grades, AverageGrades),
-    passed_exams(Grades, PassedExams).
+    (GradesCount = 0 -> AverageGrade is 0 ; sum_list(GradesAsNumbers, GradesSum), AverageGrade is GradesSum / GradesCount).
 
 
-% Для каждого предмета, найти количество не сдавших студентов
-has_student_not_passed(StudentName, SubjectId) :-
-    student(_, StudentName, Grades),
-    member(grade(SubjectId, Mark), Grades),
-    Mark < 3.
-
-subject_not_passed(SubjectId, SubjectName, NotPassedStudentNames) :-
+% Для каждого предмета получить список студентов, не сдавших экзамен 
+subject_not_passed(SubjectName, NotPassedStudentNames) :-
     subject(SubjectId, SubjectName),
-    findall(StudentName, has_student_not_passed(StudentName, SubjectId), NotPassedStudentNames).
+    findall(StudentName, grade(StudentName, SubjectId, 2), NotPassedStudentNames).
 
 
-% Для каждой группы, найти студента (студентов) с максимальным средним баллом
-find_max_avg_student(GroupId, StudentName, AverageGrade) :-
-    findall(X, (student(GroupId, _, Grades), avg_grades(Grades, X)), AverageGrades),
-    max_member(MaxAverageGrade, AverageGrades),
-    student(GroupId, StudentName, Grades),
-    avg_grades(Grades, AverageGrade),
-    AverageGrade == MaxAverageGrade.
+% Найти количество не сдавших студентов в каждой из групп
+group_not_passed_count(GroupNo, NotPassedStudentsCount) :-
+    bagof(StudentName, student(GroupNo, StudentName), StudentsNames),
+    findall(StudentName, (grade(StudentName, _, 2), member(StudentName, StudentsNames)), NotPassedStudents),
+    length(NotPassedStudents, NotPassedStudentsCount).
